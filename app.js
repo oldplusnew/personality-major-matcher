@@ -41,6 +41,9 @@ const majors = [
   ["数据科学与大数据技术", "工学", ["I", "C", "E"], "统计建模、机器学习、数据库、数据可视化", "数据分析师、机器学习工程师、商业分析、风控建模", "高", "需要数学、编程和业务理解三线并进。"]
 ].map(([name, discipline, code, courses, careers, salary, risk]) => ({ name, discipline, code, courses, careers, salary, risk }));
 
+const PAYMENT_LINK = "";
+const PAYMENT_QR_IMAGE = "alipay-qr.png";
+
 const state = {
   view: "home",
   current: 0,
@@ -313,14 +316,28 @@ function renderProfile() {
 }
 
 function paywallModal() {
+  const paymentButton = PAYMENT_LINK
+    ? `<button class="button-primary" data-action="checkout">跳转支付宝付款</button>`
+    : `<button class="button-primary" disabled>支付通道待配置</button>`;
   return `
     <div class="modal-backdrop" data-action="close-paywall">
       <div class="pay-modal" role="dialog" aria-modal="true" aria-label="解锁完整版" data-modal>
         <h2>解锁完整匹配报告</h2>
         <p>一次支付 9.9 元，开放完整专业排序、专业详情、适配原因、风险提示和本地保存。</p>
-        <div class="price-row"><strong>￥9.9</strong><span>演示版点击即可解锁；正式上线需接入真实支付与订单校验。</span></div>
+        <div class="price-row"><strong>￥9.9</strong><span>模拟解锁已关闭。上线收费版必须接入真实支付链接和订单校验，支付成功后再由服务端发放解锁权限。</span></div>
+        <div class="pay-qr-card">
+          <div>
+            <b>支付宝扫码支付</b>
+            <span>你可以提供支付宝收款二维码，我会替换这里的占位图。正式版建议使用商家收单接口生成订单二维码。</span>
+          </div>
+          <div class="qr-frame">
+            <img src="${PAYMENT_QR_IMAGE}" alt="支付宝收款二维码" onerror="this.style.display='none';this.nextElementSibling.style.display='grid';" />
+            <span>等待上传二维码</span>
+          </div>
+        </div>
         <div class="unlock-list"><span>完整专业库推荐</span><span>专业适配原因</span><span>课程与就业解读</span><span>填报风险提示</span></div>
-        <div class="modal-actions"><button class="button-secondary" data-action="close-paywall">先不解锁</button><button class="button-primary" data-action="unlock">模拟支付并解锁</button></div>
+        <div class="payment-warning">当前版本不会再通过前端按钮直接解锁，避免用户绕过付款。配置真实支付后，把 PAYMENT_LINK 替换为你的支付宝付款链接，或接入后端订单校验。</div>
+        <div class="modal-actions"><button class="button-secondary" data-action="close-paywall">先不解锁</button>${paymentButton}</div>
       </div>
     </div>`;
 }
@@ -335,7 +352,7 @@ function bindCommon() {
   document.querySelectorAll("[data-major]").forEach((el) => el.addEventListener("click", () => { state.selectedMajor = el.dataset.major; state.view = "results"; renderResults(); }));
   document.querySelectorAll("[data-action='pay']").forEach((el) => el.addEventListener("click", () => { state.showPaywall = true; render(); }));
   document.querySelectorAll("[data-action='close-paywall']").forEach((el) => el.addEventListener("click", (event) => { if (event.target.dataset.action === "close-paywall") { state.showPaywall = false; render(); } }));
-  document.querySelectorAll("[data-action='unlock']").forEach((el) => el.addEventListener("click", () => { state.unlocked = true; state.showPaywall = false; saveLocal(); render(); }));
+  document.querySelectorAll("[data-action='checkout']").forEach((el) => el.addEventListener("click", () => { if (PAYMENT_LINK) window.open(PAYMENT_LINK, "_blank", "noopener"); }));
   document.querySelectorAll("[data-action='save']").forEach((el) => el.addEventListener("click", () => { state.saved.unshift({ code: hollandCode(), top: matchMajors()[0].name, time: new Date().toLocaleString("zh-CN") }); saveLocal(); el.textContent = "已保存"; }));
 }
 
@@ -348,7 +365,7 @@ function bindProfileForm() {
 }
 
 function saveLocal() {
-  localStorage.setItem("major-match-2026", JSON.stringify({ answers: state.answers, profile: state.profile, saved: state.saved, unlocked: state.unlocked }));
+  localStorage.setItem("major-match-2026", JSON.stringify({ answers: state.answers, profile: state.profile, saved: state.saved }));
 }
 
 function loadLocal() {
@@ -357,7 +374,7 @@ function loadLocal() {
     if (data.answers) state.answers = data.answers;
     if (data.profile) state.profile = { ...state.profile, ...data.profile };
     if (data.saved) state.saved = data.saved;
-    if (typeof data.unlocked === "boolean") state.unlocked = data.unlocked;
+    state.unlocked = false;
   } catch {
     localStorage.removeItem("major-match-2026");
   }
