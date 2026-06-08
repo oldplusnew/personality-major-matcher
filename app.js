@@ -42,7 +42,7 @@ const majors = [
 ].map(([name, discipline, code, courses, careers, salary, risk]) => ({ name, discipline, code, courses, careers, salary, risk }));
 
 const PAYMENT_LINK = "";
-const PAYMENT_QR_IMAGE = "alipay-qr.png";
+const PAYMENT_QR_IMAGE = "alipay-qr.jpg";
 
 const state = {
   view: "home",
@@ -318,7 +318,7 @@ function renderProfile() {
 function paywallModal() {
   const paymentButton = PAYMENT_LINK
     ? `<button class="button-primary" data-action="checkout">跳转支付宝付款</button>`
-    : `<button class="button-primary" disabled>支付通道待配置</button>`;
+    : `<button class="button-primary" disabled>请扫码付款</button>`;
   return `
     <div class="modal-backdrop" data-action="close-paywall">
       <div class="pay-modal" role="dialog" aria-modal="true" aria-label="解锁完整版" data-modal>
@@ -332,7 +332,7 @@ function paywallModal() {
           </div>
           <div class="qr-frame">
             <img src="${PAYMENT_QR_IMAGE}" alt="支付宝收款二维码" onerror="this.style.display='none';this.nextElementSibling.style.display='grid';" />
-            <span>等待上传二维码</span>
+            <span>二维码加载失败</span>
           </div>
         </div>
         <div class="unlock-list"><span>完整专业库推荐</span><span>专业适配原因</span><span>课程与就业解读</span><span>填报风险提示</span></div>
