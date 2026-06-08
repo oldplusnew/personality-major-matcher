@@ -54,7 +54,15 @@ const state = {
   adWatching: false,
   selectedMajor: "",
   saved: [],
-  profile: { name: "", grade: "高三", goal: "还不确定" }
+  profile: { name: "", grade: "高三", goal: "还不确定" },
+  stats: {
+    firstVisit: "",
+    lastVisit: "",
+    pageViews: 0,
+    quizStarts: 0,
+    reportsGenerated: 0,
+    adsWatched: 0
+  }
 };
 
 const app = document.querySelector("#app");
@@ -310,11 +318,29 @@ function renderProfile() {
       <div class="section-head"><div><h2>个人档案</h2><p>演示版在本地浏览器保存报告，便于学生和家长回看。</p></div></div>
       <div class="profile-panel">
         ${studentPanel()}
+        ${statsPanel()}
         <h3 class="saved-title">已保存报告</h3>
         <div class="profile-grid">${state.saved.length ? state.saved.map((item) => `<div class="mini-card"><strong>${item.code}</strong><span>${item.time}<br>${item.top}</span></div>`).join("") : `<div class="empty-state">暂无保存记录。完成测评后可在匹配报告页保存。</div>`}</div>
       </div>
     </section>`);
   bindProfileForm();
+}
+
+function statsPanel() {
+  return `
+    <h3 class="saved-title">访问统计</h3>
+    <div class="profile-grid">
+      <div class="mini-card"><strong>${state.stats.pageViews}</strong><span>本浏览器访问次数</span></div>
+      <div class="mini-card"><strong>${state.stats.quizStarts}</strong><span>开始测评次数</span></div>
+      <div class="mini-card"><strong>${state.stats.reportsGenerated}</strong><span>生成报告次数</span></div>
+      <div class="mini-card"><strong>${state.stats.adsWatched}</strong><span>广告解锁次数</span></div>
+    </div>
+    <p class="stats-note">当前统计保存在本机浏览器中，用于验证产品路径。若要查看全站真实访问量，可继续接入 Cloudflare Web Analytics、Google Analytics 或百度统计。</p>
+    <div class="profile-grid">
+      <div class="mini-card"><strong>${state.stats.firstVisit || "本次"}</strong><span>首次访问</span></div>
+      <div class="mini-card"><strong>${state.stats.lastVisit || "本次"}</strong><span>最近访问</span></div>
+    </div>
+  `;
 }
 
 function paywallModal() {
@@ -359,6 +385,7 @@ function startAdWatch() {
       state.adRemaining = 0;
       state.unlocked = true;
       state.showPaywall = false;
+      trackEvent("adsWatched");
       saveLocal();
       render();
       return;
@@ -376,16 +403,23 @@ function stopAdWatch() {
 
 function bindCommon() {
   document.querySelectorAll("[data-view]").forEach((el) => el.addEventListener("click", () => { state.view = el.dataset.view; render(); window.scrollTo({ top: 0, behavior: "smooth" }); }));
-  document.querySelectorAll("[data-action='start']").forEach((el) => el.addEventListener("click", () => { state.view = "quiz"; render(); }));
+  document.querySelectorAll("[data-action='start']").forEach((el) => el.addEventListener("click", () => { trackEvent("quizStarts"); state.view = "quiz"; render(); }));
   document.querySelectorAll("[data-action='reset']").forEach((el) => el.addEventListener("click", () => { state.answers = Array(questions.length).fill(0); state.current = 0; renderQuiz(); }));
   document.querySelectorAll("[data-answer]").forEach((el) => el.addEventListener("click", () => { state.answers[state.current] = Number(el.dataset.answer); if (state.current < questions.length - 1) state.current += 1; renderQuiz(); }));
   document.querySelectorAll("[data-action='prev']").forEach((el) => el.addEventListener("click", () => { state.current = Math.max(0, state.current - 1); renderQuiz(); }));
-  document.querySelectorAll("[data-action='next']").forEach((el) => el.addEventListener("click", () => { if (!state.answers[state.current]) state.answers[state.current] = 3; if (state.current < questions.length - 1) { state.current += 1; renderQuiz(); } else { state.view = "results"; renderResults(); } }));
+  document.querySelectorAll("[data-action='next']").forEach((el) => el.addEventListener("click", () => { if (!state.answers[state.current]) state.answers[state.current] = 3; if (state.current < questions.length - 1) { state.current += 1; renderQuiz(); } else { trackEvent("reportsGenerated"); state.view = "results"; renderResults(); } }));
   document.querySelectorAll("[data-major]").forEach((el) => el.addEventListener("click", () => { state.selectedMajor = el.dataset.major; state.view = "results"; renderResults(); }));
   document.querySelectorAll("[data-action='pay']").forEach((el) => el.addEventListener("click", () => { state.showPaywall = true; render(); }));
   document.querySelectorAll("[data-action='start-ad']").forEach((el) => el.addEventListener("click", startAdWatch));
   document.querySelectorAll("[data-action='close-paywall']").forEach((el) => el.addEventListener("click", (event) => { if (event.target.dataset.action === "close-paywall") { stopAdWatch(); state.showPaywall = false; render(); } }));
   document.querySelectorAll("[data-action='save']").forEach((el) => el.addEventListener("click", () => { state.saved.unshift({ code: hollandCode(), top: matchMajors()[0].name, time: new Date().toLocaleString("zh-CN") }); saveLocal(); el.textContent = "已保存"; }));
+}
+
+function trackEvent(key) {
+  if (!Object.prototype.hasOwnProperty.call(state.stats, key)) return;
+  state.stats[key] += 1;
+  state.stats.lastVisit = new Date().toLocaleString("zh-CN");
+  saveLocal();
 }
 
 function bindProfileForm() {
@@ -397,7 +431,7 @@ function bindProfileForm() {
 }
 
 function saveLocal() {
-  localStorage.setItem("major-match-2026", JSON.stringify({ answers: state.answers, profile: state.profile, saved: state.saved, unlocked: state.unlocked }));
+  localStorage.setItem("major-match-2026", JSON.stringify({ answers: state.answers, profile: state.profile, saved: state.saved, unlocked: state.unlocked, stats: state.stats }));
 }
 
 function loadLocal() {
@@ -407,9 +441,18 @@ function loadLocal() {
     if (data.profile) state.profile = { ...state.profile, ...data.profile };
     if (data.saved) state.saved = data.saved;
     if (typeof data.unlocked === "boolean") state.unlocked = data.unlocked;
+    if (data.stats) state.stats = { ...state.stats, ...data.stats };
   } catch {
     localStorage.removeItem("major-match-2026");
   }
+}
+
+function recordPageView() {
+  const now = new Date().toLocaleString("zh-CN");
+  if (!state.stats.firstVisit) state.stats.firstVisit = now;
+  state.stats.lastVisit = now;
+  state.stats.pageViews += 1;
+  saveLocal();
 }
 
 function render() {
@@ -421,4 +464,5 @@ function render() {
 }
 
 loadLocal();
+recordPageView();
 render();
