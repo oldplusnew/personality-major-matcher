@@ -111,7 +111,6 @@ button { border: 0; cursor: pointer; }
 .planner-lock { margin-top: 16px; }
 .saved-title { margin-top: 20px !important; }
 .profile-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
-.stats-note { margin: 12px 0 0; color: var(--muted); font-size: 13px; line-height: 1.65; }
 .empty-state { min-height: 180px; border: 1px dashed var(--line-strong); border-radius: 8px; display: grid; place-items: center; padding: 22px; color: var(--muted); text-align: center; line-height: 1.7; background: rgba(255,255,255,.58); }
 .modal-backdrop { position: fixed; inset: 0; z-index: 50; padding: 24px; display: grid; place-items: center; background: rgba(17,28,40,.48); backdrop-filter: blur(10px); }
 .pay-modal { width: min(100%, 520px); border-radius: 8px; border: 1px solid var(--line); padding: 24px; background: white; box-shadow: 0 30px 80px rgba(17,28,40,.24); }
