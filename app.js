@@ -41,8 +41,8 @@ const majors = [
   ["数据科学与大数据技术", "工学", ["I", "C", "E"], "统计建模、机器学习、数据库、数据可视化", "数据分析师、机器学习工程师、商业分析、风控建模", "高", "需要数学、编程和业务理解三线并进。"]
 ].map(([name, discipline, code, courses, careers, salary, risk]) => ({ name, discipline, code, courses, careers, salary, risk }));
 
-const PAYMENT_LINK = "";
-const PAYMENT_QR_IMAGE = "alipay-qr.jpg";
+const AD_WATCH_SECONDS = 30;
+let adTimer = null;
 
 const state = {
   view: "home",
@@ -50,6 +50,8 @@ const state = {
   answers: Array(questions.length).fill(0),
   unlocked: false,
   showPaywall: false,
+  adRemaining: AD_WATCH_SECONDS,
+  adWatching: false,
   selectedMajor: "",
   saved: [],
   profile: { name: "", grade: "高三", goal: "还不确定" }
@@ -147,8 +149,8 @@ function renderHome() {
       <div class="mini-board">
         <div class="mini-card"><strong>RIASEC</strong><span>霍兰德六维兴趣评分，输出前三位性格代码。</span></div>
         <div class="mini-card"><strong>10+</strong><span>首批专业样例库，包含课程、就业、薪资、风险提示。</span></div>
-        <div class="mini-card"><strong>本地</strong><span>演示版报告保存在浏览器内，后续可接支付和账号系统。</span></div>
-        <div class="mini-card"><strong>9.9</strong><span>免费版可看基础结论，完整版解锁专业详情和完整报告。</span></div>
+        <div class="mini-card"><strong>本地</strong><span>演示版报告保存在浏览器内，后续可接广告联盟和账号系统。</span></div>
+        <div class="mini-card"><strong>广告</strong><span>免费版可看基础结论，观看完整广告后解锁专业详情和完整报告。</span></div>
       </div>
     </section>`);
   bindProfileForm();
@@ -210,7 +212,7 @@ function renderResults() {
     <section class="section">
       <div class="section-head">
         <div><h2>匹配报告</h2><p>${state.unlocked ? "完整版已解锁。" : "免费版展示基础画像和前三个推荐方向。"}当前霍兰德代码为 ${hollandCode()}，推荐结果只基于性格与兴趣倾向。</p></div>
-        ${state.unlocked ? `<button class="button-primary" data-action="save">保存完整报告</button>` : `<button class="button-primary" data-action="pay">${icon("spark")}9.9 解锁完整版</button>`}
+        ${state.unlocked ? `<button class="button-primary" data-action="save">保存完整报告</button>` : `<button class="button-primary" data-action="pay">${icon("spark")}看广告解锁完整版</button>`}
       </div>
       ${state.unlocked ? "" : freeNotice()}
       <div class="results-grid">
@@ -227,7 +229,7 @@ function renderResults() {
 }
 
 function freeNotice() {
-  return `<div class="paywall-strip"><div><b>免费版已生成基础结论</b><span>解锁后可查看完整专业库排序、专业适配原因、课程难度、就业方向和风险提示。</span></div><button class="button-primary" data-action="pay">立即解锁 9.9</button></div>`;
+  return `<div class="paywall-strip"><div><b>免费版已生成基础结论</b><span>观看完整广告后可查看完整专业库排序、专业适配原因、课程难度、就业方向和风险提示。</span></div><button class="button-primary" data-action="pay">看广告解锁</button></div>`;
 }
 
 function radarSvg() {
@@ -274,7 +276,7 @@ function majorDetail(major) {
 }
 
 function lockedPreview(count) {
-  return `<div class="locked-card"><div><h3>还有 ${count} 个高匹配专业未展示</h3><p>完整版会继续展开专业适配原因、课程难度、就业方向、薪资热度和风险提示。</p></div><button class="button-primary" data-action="pay">9.9 解锁</button></div>`;
+  return `<div class="locked-card"><div><h3>还有 ${count} 个高匹配专业未展示</h3><p>完整版会继续展开专业适配原因、课程难度、就业方向、薪资热度和风险提示。</p></div><button class="button-primary" data-action="pay">看广告解锁</button></div>`;
 }
 
 function lockedDetail(major) {
@@ -286,7 +288,7 @@ function lockedDetail(major) {
         <div class="detail-item blur"><b>核心课程</b><span>${major.courses}</span></div>
         <div class="detail-item blur"><b>就业方向</b><span>${major.careers}</span></div>
       </div>
-      <div class="unlock-panel"><b>解锁完整解读</b><span>查看课程、就业、薪资热度、风险提示、适配原因和保存完整报告。</span><button class="button-primary" data-action="pay">支付 9.9 解锁</button></div>
+      <div class="unlock-panel"><b>解锁完整解读</b><span>查看课程、就业、薪资热度、风险提示、适配原因和保存完整报告。</span><button class="button-primary" data-action="pay">看广告解锁</button></div>
     </div>`;
 }
 
@@ -297,7 +299,7 @@ function renderLibrary() {
       <div class="section-head"><div><h2>专业库</h2><p>这里展示按当前性格画像排序后的专业方向。免费版可预览，完整版开放全部详情。</p></div></div>
       <div class="planner-panel">
         <h3>${hollandCode()} 画像 · ${state.unlocked ? "完整专业库" : "免费预览"}</h3>
-        ${state.unlocked ? `<div class="major-list library-list">${matched.map((m) => majorCard(m, false)).join("")}</div>` : `<div class="locked-card planner-lock"><div><h3>完整专业库属于完整版</h3><p>免费版先给出前三个方向，完整版展示全部专业排序、每个专业的适配原因、课程、就业和风险提示。</p></div><button class="button-primary" data-action="pay">9.9 解锁专业库</button></div>`}
+        ${state.unlocked ? `<div class="major-list library-list">${matched.map((m) => majorCard(m, false)).join("")}</div>` : `<div class="locked-card planner-lock"><div><h3>完整专业库需要观看广告后解锁</h3><p>免费版先给出前三个方向，观看完整广告后展示全部专业排序、每个专业的适配原因、课程、就业和风险提示。</p></div><button class="button-primary" data-action="pay">看广告解锁专业库</button></div>`}
       </div>
     </section>`);
 }
@@ -316,30 +318,60 @@ function renderProfile() {
 }
 
 function paywallModal() {
-  const paymentButton = PAYMENT_LINK
-    ? `<button class="button-primary" data-action="checkout">跳转支付宝付款</button>`
-    : `<button class="button-primary" disabled>请扫码付款</button>`;
+  const progress = Math.round(((AD_WATCH_SECONDS - state.adRemaining) / AD_WATCH_SECONDS) * 100);
+  const actionButton = state.adWatching
+    ? `<button class="button-primary" disabled>广告播放中 ${state.adRemaining}s</button>`
+    : `<button class="button-primary" data-action="start-ad">开始观看广告</button>`;
   return `
     <div class="modal-backdrop" data-action="close-paywall">
       <div class="pay-modal" role="dialog" aria-modal="true" aria-label="解锁完整版" data-modal>
-        <h2>解锁完整匹配报告</h2>
-        <p>一次支付 9.9 元，开放完整专业排序、专业详情、适配原因、风险提示和本地保存。</p>
-        <div class="price-row"><strong>￥9.9</strong><span>模拟解锁已关闭。上线收费版必须接入真实支付链接和订单校验，支付成功后再由服务端发放解锁权限。</span></div>
-        <div class="pay-qr-card">
-          <div>
-            <b>支付宝扫码支付</b>
-            <span>你可以提供支付宝收款二维码，我会替换这里的占位图。正式版建议使用商家收单接口生成订单二维码。</span>
+        <h2>观看广告解锁完整报告</h2>
+        <p>完整观看 ${AD_WATCH_SECONDS} 秒广告后，自动开放完整专业排序、专业详情、适配原因、风险提示和本地保存。</p>
+        <div class="ad-player">
+          <div class="ad-screen">
+            <strong>广告位</strong>
+            <span>这里后续可以接入广告联盟代码。当前版本用计时广告模拟真实观看流程。</span>
           </div>
-          <div class="qr-frame">
-            <img src="${PAYMENT_QR_IMAGE}" alt="支付宝收款二维码" onerror="this.style.display='none';this.nextElementSibling.style.display='grid';" />
-            <span>二维码加载失败</span>
+          <div>
+            <div class="ad-count">${state.adRemaining}s</div>
+            <div class="ad-progress"><span style="width:${progress}%"></span></div>
           </div>
         </div>
         <div class="unlock-list"><span>完整专业库推荐</span><span>专业适配原因</span><span>课程与就业解读</span><span>填报风险提示</span></div>
-        <div class="payment-warning">当前版本不会再通过前端按钮直接解锁，避免用户绕过付款。配置真实支付后，把 PAYMENT_LINK 替换为你的支付宝付款链接，或接入后端订单校验。</div>
-        <div class="modal-actions"><button class="button-secondary" data-action="close-paywall">先不解锁</button>${paymentButton}</div>
+        <div class="ad-warning">请保持当前页面打开直到倒计时结束。关闭弹窗或刷新页面会重新开始计时。</div>
+        <div class="modal-actions"><button class="button-secondary" data-action="close-paywall">稍后再看</button>${actionButton}</div>
       </div>
     </div>`;
+}
+
+function startAdWatch() {
+  if (state.adWatching) return;
+  state.adWatching = true;
+  state.adRemaining = AD_WATCH_SECONDS;
+  render();
+  clearInterval(adTimer);
+  adTimer = setInterval(() => {
+    state.adRemaining -= 1;
+    if (state.adRemaining <= 0) {
+      clearInterval(adTimer);
+      adTimer = null;
+      state.adWatching = false;
+      state.adRemaining = 0;
+      state.unlocked = true;
+      state.showPaywall = false;
+      saveLocal();
+      render();
+      return;
+    }
+    render();
+  }, 1000);
+}
+
+function stopAdWatch() {
+  clearInterval(adTimer);
+  adTimer = null;
+  state.adWatching = false;
+  state.adRemaining = AD_WATCH_SECONDS;
 }
 
 function bindCommon() {
@@ -351,8 +383,8 @@ function bindCommon() {
   document.querySelectorAll("[data-action='next']").forEach((el) => el.addEventListener("click", () => { if (!state.answers[state.current]) state.answers[state.current] = 3; if (state.current < questions.length - 1) { state.current += 1; renderQuiz(); } else { state.view = "results"; renderResults(); } }));
   document.querySelectorAll("[data-major]").forEach((el) => el.addEventListener("click", () => { state.selectedMajor = el.dataset.major; state.view = "results"; renderResults(); }));
   document.querySelectorAll("[data-action='pay']").forEach((el) => el.addEventListener("click", () => { state.showPaywall = true; render(); }));
-  document.querySelectorAll("[data-action='close-paywall']").forEach((el) => el.addEventListener("click", (event) => { if (event.target.dataset.action === "close-paywall") { state.showPaywall = false; render(); } }));
-  document.querySelectorAll("[data-action='checkout']").forEach((el) => el.addEventListener("click", () => { if (PAYMENT_LINK) window.open(PAYMENT_LINK, "_blank", "noopener"); }));
+  document.querySelectorAll("[data-action='start-ad']").forEach((el) => el.addEventListener("click", startAdWatch));
+  document.querySelectorAll("[data-action='close-paywall']").forEach((el) => el.addEventListener("click", (event) => { if (event.target.dataset.action === "close-paywall") { stopAdWatch(); state.showPaywall = false; render(); } }));
   document.querySelectorAll("[data-action='save']").forEach((el) => el.addEventListener("click", () => { state.saved.unshift({ code: hollandCode(), top: matchMajors()[0].name, time: new Date().toLocaleString("zh-CN") }); saveLocal(); el.textContent = "已保存"; }));
 }
 
@@ -365,7 +397,7 @@ function bindProfileForm() {
 }
 
 function saveLocal() {
-  localStorage.setItem("major-match-2026", JSON.stringify({ answers: state.answers, profile: state.profile, saved: state.saved }));
+  localStorage.setItem("major-match-2026", JSON.stringify({ answers: state.answers, profile: state.profile, saved: state.saved, unlocked: state.unlocked }));
 }
 
 function loadLocal() {
@@ -374,7 +406,7 @@ function loadLocal() {
     if (data.answers) state.answers = data.answers;
     if (data.profile) state.profile = { ...state.profile, ...data.profile };
     if (data.saved) state.saved = data.saved;
-    state.unlocked = false;
+    if (typeof data.unlocked === "boolean") state.unlocked = data.unlocked;
   } catch {
     localStorage.removeItem("major-match-2026");
   }

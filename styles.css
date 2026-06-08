@@ -119,13 +119,14 @@ button { border: 0; cursor: pointer; }
 .price-row { margin-top: 18px; padding: 16px; border-radius: 8px; background: #f4f8fc; display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 14px; align-items: center; }
 .price-row strong { color: var(--orange); font-size: 34px; }
 .price-row span { color: var(--muted); font-size: 14px; line-height: 1.55; }
-.pay-qr-card { margin-top: 16px; padding: 16px; border: 1px solid var(--line); border-radius: 8px; display: grid; grid-template-columns: minmax(0, 1fr) 190px; gap: 16px; align-items: center; background: #fbfdff; }
-.pay-qr-card b, .pay-qr-card span { display: block; }
-.pay-qr-card span { margin-top: 8px; color: var(--muted); font-size: 14px; line-height: 1.6; }
-.qr-frame { width: 190px; aspect-ratio: 754 / 883; border: 1px dashed var(--line-strong); border-radius: 8px; display: grid; place-items: center; overflow: hidden; background: white; }
-.qr-frame img { width: 100%; height: 100%; object-fit: contain; }
-.qr-frame span { width: 100%; height: 100%; margin: 0; padding: 12px; display: none; place-items: center; color: var(--muted); text-align: center; font-size: 13px; line-height: 1.45; }
-.payment-warning { margin-top: 14px; padding: 12px; border-radius: 8px; color: #6d4a16; background: rgba(221,139,43,.13); font-size: 13px; line-height: 1.6; }
+.ad-player { margin-top: 16px; padding: 16px; border: 1px solid var(--line); border-radius: 8px; display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 16px; align-items: center; background: #fbfdff; }
+.ad-screen { min-height: 160px; border-radius: 8px; display: grid; place-items: center; align-content: center; gap: 10px; padding: 18px; color: white; text-align: center; background: linear-gradient(135deg, var(--blue), var(--teal)); }
+.ad-screen strong { font-size: 28px; }
+.ad-screen span { max-width: 360px; color: rgba(255,255,255,.86); font-size: 14px; line-height: 1.7; }
+.ad-count { width: 86px; height: 86px; border-radius: 50%; display: grid; place-items: center; color: var(--blue); background: white; border: 8px solid #e6edf4; font-size: 24px; font-weight: 850; }
+.ad-progress { margin-top: 12px; height: 8px; border-radius: 999px; overflow: hidden; background: #e6edf4; }
+.ad-progress span { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--teal); transition: width .2s ease; }
+.ad-warning { margin-top: 14px; padding: 12px; border-radius: 8px; color: #6d4a16; background: rgba(221,139,43,.13); font-size: 13px; line-height: 1.6; }
 .unlock-list { margin-top: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .unlock-list span { padding: 10px 12px; border-radius: 8px; color: #405263; background: #eef4f8; font-size: 13px; font-weight: 750; }
 .modal-actions { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
@@ -143,8 +144,8 @@ button { border: 0; cursor: pointer; }
   .major-card { grid-template-columns: 1fr; }
   .score-ring { justify-self: start; }
   .paywall-strip, .locked-card, .modal-actions { align-items: stretch; flex-direction: column; }
-  .unlock-panel, .price-row, .pay-qr-card { grid-template-columns: 1fr; }
-  .qr-frame { width: min(100%, 240px); justify-self: center; }
+  .unlock-panel, .price-row, .ad-player { grid-template-columns: 1fr; }
+  .ad-count { justify-self: center; }
 }
 
 @media (prefers-reduced-motion: reduce) {
